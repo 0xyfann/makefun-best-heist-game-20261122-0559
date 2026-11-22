@@ -8,7 +8,7 @@
 // Outside the grader, MAKEFUN_OUTPUT_DIR stands in for /output:
 //   mkdir -p out && MAKEFUN_OUTPUT_DIR=out node main.ts
 
-import { cpSync, existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildDossier } from './vendor/makefun-game.ts';
@@ -26,9 +26,14 @@ if (!existsSync(join(here, 'screenshots')) || !existsSync(join(here, 'screenshot
 }
 
 // Start from an empty output directory so a stale file from an earlier
-// run can never ride along into the entry.
-rmSync(out, { recursive: true, force: true });
+// run can never ride along into the entry. Only the contents are
+// removed, never the directory itself: the grader mounts the output
+// directory, and removing a mount point fails (EPERM) — that is what
+// failed round 1.
 mkdirSync(out, { recursive: true });
+for (const entry of readdirSync(out)) {
+  rmSync(join(out, entry), { recursive: true, force: true });
+}
 
 cpSync(join(here, 'game'), join(out, 'game'), { recursive: true });
 mkdirSync(join(out, 'screenshots'), { recursive: true });
